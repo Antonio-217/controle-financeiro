@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "firebase": "^12.6.0",
+    "lucide-react": "^0.556.0",
+    "react-router-dom": "^7.10.1",
+    "tailwindcss": "^4.1.17"
+  }
+}
