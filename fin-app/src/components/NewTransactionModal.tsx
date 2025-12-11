@@ -30,9 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
 import { toast } from "sonner";
-
 import { CalendarIcon, DollarSign, Tag, CreditCard, ArrowDownCircle, ArrowUpCircle, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
@@ -71,7 +69,7 @@ export function NewTransactionModal({
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       description: "",
       amount: 0,
@@ -186,11 +184,11 @@ export function NewTransactionModal({
 
         <div className="p-6 pt-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-5">
               
               {/* Seletor de Tipo Visual */}
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="type"
                 render={({ field }) => (
                   <FormItem>
@@ -227,7 +225,7 @@ export function NewTransactionModal({
               {/* Valor e Data */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
@@ -243,7 +241,7 @@ export function NewTransactionModal({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="date"
                   render={({ field }) => (
                     <FormItem>
@@ -262,7 +260,7 @@ export function NewTransactionModal({
 
               {/* Descrição */}
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -281,7 +279,7 @@ export function NewTransactionModal({
               {/* Grupo e Categoria */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="category_group"
                   render={({ field }) => (
                     <FormItem>
@@ -304,7 +302,7 @@ export function NewTransactionModal({
                 />
 
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="subcategory_id"
                   render={({ field }) => (
                     <FormItem>
@@ -329,7 +327,7 @@ export function NewTransactionModal({
 
               {/* Pagamento */}
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="payment_method"
                 render={({ field }) => (
                   <FormItem>

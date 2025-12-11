@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, DollarSign, Mail, Lock } from "lucide-react";
+import { Loader2, DollarSign, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 
 export function Login() {
@@ -45,7 +45,6 @@ export function Login() {
       toast.warning("Preencha email e senha");
       return;
     }
-
     setIsLoggingIn(true);
     try {
       await authenticateWithEmail(email, password, isRegistering, name);
