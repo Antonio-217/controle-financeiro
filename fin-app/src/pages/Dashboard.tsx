@@ -3,16 +3,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 
-import { NewTransactionModal } from "@/components/NewTransactionModal";
+import { NewTransactionModal } from "@/components/dashboard/NewTransactionModal";
 import { Button } from "@/components/ui/button";
-import { 
-  LogOut, 
-  TrendingUp, 
-  Wallet, 
-  ShoppingBag, 
-  Plus, 
-  MoreHorizontal, 
-  Edit, 
+import {
+  LogOut,
+  TrendingUp,
+  Wallet,
+  ShoppingBag,
+  Plus,
+  MoreHorizontal,
+  Edit,
   Trash2,
   ArrowUpRight,
   ArrowDownLeft
@@ -20,9 +20,23 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 // --- TIPOS ---
@@ -57,10 +71,10 @@ function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
         <h3 className="text-lg font-bold text-zinc-800">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount)}
         </h3>
-        {/* Barra de Progresso Mini */}
+        {/* Barra de Progresso */}
         <div className="w-full bg-zinc-100 h-1.5 rounded-full mt-2 overflow-hidden">
-          <div 
-            className={`h-full rounded-full ${isOver ? 'bg-red-500' : colorClass.replace("bg-", "bg-")}`} 
+          <div
+            className={`h-full rounded-full ${isOver ? 'bg-red-500' : colorClass.replace("bg-", "bg-")}`}
             style={{ width: `${percent}%` }}
           />
         </div>
@@ -71,6 +85,8 @@ function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
 
 // Item da Lista
 function TransactionItem({ transaction, onEdit, onDelete }: any) {
+
+  const [isAlertOpen, setIsAlertOpen] = useState(false); // Controle do Alerta de Exclusão
   const isIncome = transaction.type === "income";
   const dateFormatted = new Date(transaction.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 
@@ -119,49 +135,82 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-zinc-50 mb-3 hover:shadow-md transition-all cursor-pointer">
-      <div className="flex items-center gap-4">
-        {/* Ícone Quadrado Arredondado */}
-        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${iconBg}`}>
-          <Icon className={`h-6 w-6 ${iconColor}`} />
+    <>
+      <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-zinc-50 mb-3 hover:shadow-md transition-all cursor-pointer">
+        <div className="flex items-center gap-4">
+          {/* Ícone */}
+          <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${iconBg}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
+          </div>
+
+          {/* Texto */}
+          <div className="flex flex-col">
+            <span className="font-semibold text-zinc-800 text-sm sm:text-base">
+              {transaction.description}
+            </span>
+            <span className="text-xs text-zinc-400 font-medium capitalize">
+              {dateFormatted} • {categoryLabel()}
+            </span>
+          </div>
         </div>
-        
-        {/* Texto */}
-        <div className="flex flex-col">
-          <span className="font-semibold text-zinc-800 text-sm sm:text-base">
-            {transaction.description}
+
+        <div className="flex items-center gap-3">
+          {/* Valor */}
+          <span className={`font-bold text-sm sm:text-base ${isIncome ? 'text-emerald-600' : 'text-zinc-800'}`}>
+            {isIncome ? '+ ' : '- '}
+            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
           </span>
-          <span className="text-xs text-zinc-400 font-medium capitalize">
-            {dateFormatted} • {categoryLabel()}
-          </span>
+
+          {/* Menu Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0 text-zinc-300 hover:text-zinc-600">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => onEdit(transaction)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  onClick={() => setIsAlertOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Valor */}
-        <span className={`font-bold text-sm sm:text-base ${isIncome ? 'text-emerald-600' : 'text-zinc-800'}`}>
-          {isIncome ? '+ ' : '- '}
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
-        </span>
-
-        {/* Menu Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 text-zinc-500 hover:text-zinc-700">
-              <MoreHorizontal className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(transaction)}>
-              <Edit className="mr-2 h-4 w-4" /> Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(transaction.id)} className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
+      {/* Alerta de exclusão */}
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. Isso excluirá permanentemente o lançamento
+              <span className="font-bold text-zinc-900"> "{transaction.description}" </span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => onDelete(transaction.id)}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Sim, excluir
+            </AlertDialogAction>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -208,13 +257,13 @@ export function Dashboard() {
 
   async function handleDelete(id: string) {
     if (window.confirm("Excluir lançamento?")) {
-      try { 
-        await deleteDoc(doc(db, "transactions", id)); 
+      try {
+        await deleteDoc(doc(db, "transactions", id));
         toast.success("Lançamento excluído com sucesso.");
-        } 
-      catch (e) { 
+      }
+      catch (e) {
         toast.error("Erro ao excluir lançamento. Tente novamente.");
-    }
+      }
     }
   }
 
@@ -222,7 +271,7 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      
+
       {/* HEADER */}
       <header className="bg-white pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm mb-6">
         <div className="max-w-lg mx-auto">
@@ -251,31 +300,31 @@ export function Dashboard() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 sm:px-6">
-        
+
         {/* Seção 50/30/20 (Grid de 3 colunas) */}
         <div className="mb-8">
           <h3 className="text-lg font-bold text-zinc-800 mb-4 px-2">Planejamento</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <SummaryCard 
-              title="Necessidades" 
-              amount={totals.needs} 
-              meta={income * 0.5} 
-              colorClass="bg-blue-500" 
-              icon={Wallet} 
+            <SummaryCard
+              title="Necessidades"
+              amount={totals.needs}
+              meta={income * 0.5}
+              colorClass="bg-blue-500"
+              icon={Wallet}
             />
-            <SummaryCard 
-              title="Estilo de Vida" 
-              amount={totals.wants} 
-              meta={income * 0.3} 
-              colorClass="bg-orange-500" 
-              icon={ShoppingBag} 
+            <SummaryCard
+              title="Estilo de Vida"
+              amount={totals.wants}
+              meta={income * 0.3}
+              colorClass="bg-orange-500"
+              icon={ShoppingBag}
             />
-            <SummaryCard 
-              title="Futuro" 
-              amount={totals.savings} 
-              meta={income * 0.2} 
-              colorClass="bg-emerald-500" 
-              icon={TrendingUp} 
+            <SummaryCard
+              title="Futuro"
+              amount={totals.savings}
+              meta={income * 0.2}
+              colorClass="bg-emerald-500"
+              icon={TrendingUp}
             />
           </div>
         </div>
@@ -296,14 +345,14 @@ export function Dashboard() {
           ) : (
             <div className="space-y-1">
               {transactions.map((t) => (
-                <TransactionItem 
-                  key={t.id} 
-                  transaction={t} 
+                <TransactionItem
+                  key={t.id}
+                  transaction={t}
                   onEdit={(item: Transaction) => {
                     setEditingTransaction(item);
                     setIsEditModalOpen(true);
-                  }} 
-                  onDelete={handleDelete} 
+                  }}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
@@ -311,19 +360,10 @@ export function Dashboard() {
         </div>
       </main>
 
-      {/* BOTÃO FLUTUANTE */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <NewTransactionModal>
-          <Button className="h-14 w-14 rounded-full bg-zinc-900 hover:bg-zinc-800 shadow-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer">
-            <Plus className="h-6 w-6 text-white" />
-          </Button>
-        </NewTransactionModal>
-      </div>
-
       {/* Modal de Edição */}
       {editingTransaction && (
-        <NewTransactionModal 
-          openControl={isEditModalOpen} 
+        <NewTransactionModal
+          openControl={isEditModalOpen}
           onOpenChangeControl={(open) => {
             setIsEditModalOpen(open);
             if (!open) setEditingTransaction(null);

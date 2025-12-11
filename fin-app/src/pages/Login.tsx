@@ -15,7 +15,7 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-
+  // Se não estiver logado retorna ao login
   if (user) return <Navigate to="/" replace />;
 
   if (loading) {
@@ -98,7 +98,7 @@ export function Login() {
                 />
               </div>
             )}
-
+            {/* Email */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
                 <Mail className="h-5 w-5" />
@@ -112,7 +112,7 @@ export function Login() {
                 required
               />
             </div>
-
+            {/* Senha */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
                 <Lock className="h-5 w-5" />
@@ -134,7 +134,7 @@ export function Login() {
             disabled={isLoggingIn}
             className="h-14 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-lg rounded-xl shadow-lg shadow-emerald-900/20 transition-all mt-2"
           >
-            {isLoggingIn ? <Loader2 className="animate-spin" /> : (isRegistering ? "Criar Conta" : "Entrar")}
+            {isLoggingIn ? <Loader2 className="animate-spin" /> : (isRegistering ? "Criar conta" : "Entrar")}
           </Button>
 
         </form>
@@ -170,7 +170,7 @@ export function Login() {
             onClick={() => setIsRegistering(!isRegistering)}
             className="text-emerald-500 font-bold hover:underline"
           >
-            {isRegistering ? "Faça Login" : "Registre-se"}
+            {isRegistering ? "Faça login" : "Registre-se"}
           </button>
         </p>
       </div>

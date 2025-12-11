@@ -4,6 +4,8 @@ import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
+import { Investments } from "./pages/Investments";
+import { Layout } from "./components/Layout/Layout";
 
 // Componente para proteger rotas privadas
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -25,14 +27,12 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
+
+        <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/investments" element={<Investments />} />
+        </Route>
+
       </Routes>
       <Toaster position="top-center" richColors theme="light" />
     </BrowserRouter>
