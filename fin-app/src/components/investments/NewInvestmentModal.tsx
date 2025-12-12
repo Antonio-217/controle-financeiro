@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
@@ -80,7 +79,7 @@ export function NewInvestmentModal({ children }: { children: React.ReactNode }) 
                 <div className="bg-emerald-50 p-6 pb-4 border-b border-zinc-100">
                     <DialogTitle className="flex items-center gap-2 text-zinc-800">
                         <PiggyBank className="h-5 w-5 text-emerald-600" />
-                        Nova Caixinha
+                        Nova caixinha
                     </DialogTitle>
                     <p className="text-sm text-zinc-500 mt-1">Crie um objetivo para guardar dinheiro.</p>
                 </div>
@@ -94,7 +93,7 @@ export function NewInvestmentModal({ children }: { children: React.ReactNode }) 
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs uppercase font-bold text-zinc-500">Nome do Objetivo</FormLabel>
+                                        <FormLabel className="text-xs uppercase font-bold text-zinc-500">Nome do objetivo</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />

@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Investments } from "./pages/Investments";
-import { Layout } from "./components/Layout/Layout";
+import { Layout } from "./components/layout/Layout";
 
 // Componente para proteger rotas privadas
 function PrivateRoute({ children }: { children: React.ReactNode }) {

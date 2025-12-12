@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Wallet,
   ShoppingBag,
-  Plus,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -24,7 +23,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -129,9 +127,9 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
   const categoryLabel = () => {
     if (isIncome) return 'Receita';
     if (transaction.category_group === 'needs') return 'Necessidades';
-    if (transaction.category_group === 'wants') return 'Estilo de Vida';
+    if (transaction.category_group === 'wants') return 'Estilo de vida';
     if (transaction.category_group === 'savings') return 'Futuro';
-    return 'Despesa Avulsa';
+    return 'Despesa avulsa';
   };
 
   return (
@@ -291,7 +289,7 @@ export function Dashboard() {
           </div>
 
           <div className="text-center">
-            <p className="text-zinc-500 text-sm mb-1">Saldo Atual</p>
+            <p className="text-zinc-500 text-sm mb-1">Saldo atual</p>
             <h1 className={`text-4xl font-extrabold ${saldoTotal >= 0 ? 'text-zinc-900' : 'text-red-600'}`}>
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saldoTotal)}
             </h1>
@@ -313,7 +311,7 @@ export function Dashboard() {
               icon={Wallet}
             />
             <SummaryCard
-              title="Estilo de Vida"
+              title="Estilo de vida"
               amount={totals.wants}
               meta={income * 0.3}
               colorClass="bg-orange-500"

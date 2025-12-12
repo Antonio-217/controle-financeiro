@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { BottomMenu } from "../investments/BottomMenu";
+import { BottomMenu } from "../bottomMenu/BottomMenu";
 
 export function Layout() {
   return (
