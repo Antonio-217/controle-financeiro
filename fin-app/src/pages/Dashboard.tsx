@@ -42,13 +42,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Cell
 } from "recharts";
@@ -61,6 +61,8 @@ interface Transaction {
   type: "income" | "expense";
   category_group: "needs" | "wants" | "savings";
   date: string;
+  due_date?: string;
+  status?: string;
   created_at: any;
 }
 
@@ -101,30 +103,25 @@ function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
 
 // Card de totais
 function TotalCard({ title, value, type }: { title: string, value: number, type: 'income' | 'expense' | 'balance' }) {
-    let color = 'text-zinc-800';
-    let bg = 'bg-white';
-    
-    if (type === 'income') color = 'text-emerald-600';
-    if (type === 'expense') color = 'text-red-600';
-    if (type === 'balance') color = value >= 0 ? 'text-zinc-900' : 'text-red-600';
+  let color = 'text-zinc-800';
 
-    return (
-        <div className="bg-white border border-zinc-100 p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center gap-1">
-            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{title}</span>
-            <span className={`text-xl sm:text-2xl font-bold ${color}`}>{formatMoney(value)}</span>
-        </div>
-    )
+  if (type === 'income') color = 'text-emerald-600';
+  if (type === 'expense') color = 'text-red-600';
+  if (type === 'balance') color = value >= 0 ? 'text-zinc-900' : 'text-red-600';
+
+  return (
+    <div className="bg-white border border-zinc-100 p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center gap-1">
+      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{title}</span>
+      <span className={`text-xl sm:text-2xl font-bold ${color}`}>{formatMoney(value)}</span>
+    </div>
+  )
 }
 
 // Item da Lista
 function TransactionItem({ transaction, onEdit, onDelete }: any) {
-  const [isAlertOpen, setIsAlertOpen] = useState(false); // Controle do Alerta de Exclusão
+  const [isAlertOpen, setIsAlertOpen] = useState(false); // Controle do alerta de exclusão
   const isIncome = transaction.type === "income";
   const dateFormatted = new Date(transaction.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
-
-  // Vencimento
-  const isPending = !isIncome && transaction.status !== 'paid';
-  const dueDateFormatted = transaction.due_date ? new Date(transaction.due_date + "T12:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : null;
 
   // Lógica de Ícones e Cores
   let iconBg = "bg-zinc-100";
@@ -184,7 +181,7 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
             <span className="font-semibold text-zinc-800 text-sm sm:text-base">
               {transaction.description}
             </span>
-            <span className="text-xs text-zinc-400 font-medium capitalize">
+            <span className="text-xs text-zinc-400 font-medium">
               {dateFormatted} • {categoryLabel()}
             </span>
           </div>
@@ -256,7 +253,9 @@ export function Dashboard() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
   const [totals, setTotals] = useState({ needs: 0, wants: 0, savings: 0 });
 
   // Estados de Edição
@@ -302,11 +301,11 @@ export function Dashboard() {
       checkNotifications(data);
       setLoading(false);
     }, (error) => {
-        console.error("Erro ao buscar transações:", error);
-        if (error.message.includes("indexes")) {
-            toast.error("Configuração necessária: Verifique o console para criar o índice no Firebase.");
-        }
-        setLoading(false);
+      console.error("Erro ao buscar transações:", error);
+      if (error.message.includes("indexes")) {
+        toast.error("Configuração necessária: Verifique o console para criar o índice no Firebase.");
+      }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [user?.groupId, currentDate]);
@@ -334,29 +333,29 @@ export function Dashboard() {
   // Sistema de Notificação de Vencimentos
   const checkNotifications = (data: Transaction[]) => {
     const today = new Date();
-    today.setHours(0,0,0,0);
-    
+    today.setHours(0, 0, 0, 0);
+
     let dueCount = 0;
 
     data.forEach(t => {
-        if (t.type === 'expense' && t.due_date) {
-            const due = new Date(t.due_date + "T12:00:00");
-            // Diferença em dias
-            const diffTime = due.getTime() - today.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      if (t.type === 'expense' && t.due_date) {
+        const due = new Date(t.due_date + "T12:00:00");
+        // Diferença em dias
+        const diffTime = due.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            // Se vence hoje ou nos próximos 3 dias
-            if (diffDays >= 0 && diffDays <= 3) {
-                dueCount++;
-            }
+        // Se vence hoje ou nos próximos 3 dias
+        if (diffDays >= 0 && diffDays <= 3) {
+          dueCount++;
         }
+      }
     });
 
     if (dueCount > 0) {
-        toast.info(`Atenção: Você tem ${dueCount} contas vencendo em breve!`, {
-            duration: 5000,
-            icon: <CalendarClock className="w-5 h-5 text-orange-500" />
-        });
+      toast.info(`Atenção: Você tem ${dueCount} contas vencendo em breve!`, {
+        duration: 5000,
+        icon: <CalendarClock className="w-5 h-5 text-orange-500" />
+      });
     }
   };
 
@@ -404,20 +403,20 @@ export function Dashboard() {
 
           {/* Seletor de Mês e Saldo */}
           <div className="flex flex-col items-center justify-center">
-            
+
             <div className="flex items-center gap-4 mb-2 bg-zinc-50 rounded-full p-1 pr-4 pl-1 border border-zinc-100">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white shadow-sm hover:bg-zinc-100" onClick={handlePrevMonth}>
-                    <ChevronLeft className="h-4 w-4 text-zinc-600" />
-                </Button>
-                <span className="text-sm font-semibold text-zinc-700 capitalize w-32 text-center select-none">
-                    {monthLabel}
-                </span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white shadow-sm hover:bg-zinc-100" onClick={handleNextMonth}>
-                    <ChevronRight className="h-4 w-4 text-zinc-600" />
-                </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white shadow-sm hover:bg-zinc-100" onClick={handlePrevMonth}>
+                <ChevronLeft className="h-4 w-4 text-zinc-600" />
+              </Button>
+              <span className="text-sm font-semibold text-zinc-700 w-32 text-center select-none">
+                {monthLabel}
+              </span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white shadow-sm hover:bg-zinc-100" onClick={handleNextMonth}>
+                <ChevronRight className="h-4 w-4 text-zinc-600" />
+              </Button>
             </div>
 
-            <p className="text-zinc-500 text-sm mb-1 mt-2">Saldo em {currentDate.toLocaleDateString('pt-BR', {month: 'long'})}</p>
+            <p className="text-zinc-500 text-sm mb-1 mt-2">Saldo em {currentDate.toLocaleDateString('pt-BR', { month: 'long' })}</p>
             <h1 className={`text-4xl font-extrabold ${saldoTotal >= 0 ? 'text-zinc-900' : 'text-red-600'}`}>
               {formatMoney(saldoTotal)}
             </h1>
@@ -428,106 +427,106 @@ export function Dashboard() {
       <main className="max-w-lg mx-auto px-4 sm:px-6">
 
         <Tabs defaultValue="list" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-200/50 p-1 rounded-xl">
-                <TabsTrigger value="list" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold">
-                    <ListIcon className="w-4 h-4 mr-2" /> Extrato
-                </TabsTrigger>
-                <TabsTrigger value="graphics" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold">
-                    <PieChart className="w-4 h-4 mr-2" /> Relatórios
-                </TabsTrigger>
-            </TabsList>
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-200/50 p-1 rounded-xl">
+            <TabsTrigger value="list" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold">
+              <ListIcon className="w-4 h-4 mr-2" /> Extrato
+            </TabsTrigger>
+            <TabsTrigger value="graphics" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold">
+              <PieChart className="w-4 h-4 mr-2" /> Relatórios
+            </TabsTrigger>
+          </TabsList>
 
-            {/* ABA 1: LISTAGEM (PADRÃO) */}
-            <TabsContent value="list" className="space-y-6 animate-in fade-in-50">
-                {/* 50/30/20 Resumo */}
-                <div>
-                    <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 px-1">Planejamento Mensal</h3>
-                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                        <SummaryCard title="Necessidades" amount={totals.needs} meta={income * 0.5} colorClass="bg-blue-500" icon={Wallet} />
-                        <SummaryCard title="Estilo Vida" amount={totals.wants} meta={income * 0.3} colorClass="bg-orange-500" icon={ShoppingBag} />
-                        <SummaryCard title="Futuro" amount={totals.savings} meta={income * 0.2} colorClass="bg-emerald-500" icon={TrendingUp} />
-                    </div>
+          {/* ABA 1: Listagem */}
+          <TabsContent value="list" className="space-y-6 animate-in fade-in-50">
+            {/* 50/30/20 Resumo */}
+            <div>
+              <h3 className="text-xs font-bold text-zinc-400 tracking-wider mb-3 px-1">Planejamento mensal</h3>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <SummaryCard title="Necessidades" amount={totals.needs} meta={income * 0.5} colorClass="bg-blue-500" icon={Wallet} />
+                <SummaryCard title="Estilo de vida" amount={totals.wants} meta={income * 0.3} colorClass="bg-orange-500" icon={ShoppingBag} />
+                <SummaryCard title="Futuro" amount={totals.savings} meta={income * 0.2} colorClass="bg-emerald-500" icon={TrendingUp} />
+              </div>
+            </div>
+
+            {/* Lista */}
+            <div>
+              <div className="flex justify-between items-end mb-4 px-1">
+                <h3 className="text-lg font-bold text-zinc-800">Transações</h3>
+              </div>
+
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-zinc-400 text-sm">Atualizando...</p>
                 </div>
-
-                {/* Lista */}
-                <div>
-                    <div className="flex justify-between items-end mb-4 px-1">
-                        <h3 className="text-lg font-bold text-zinc-800">Transações</h3>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-10 gap-3">
-                            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                            <p className="text-zinc-400 text-sm">Atualizando...</p>
-                        </div>
-                    ) : transactions.length === 0 ? (
-                        <div className="text-center py-12 border-2 border-dashed border-zinc-100 rounded-2xl bg-zinc-50/50">
-                            <p className="text-zinc-400 font-medium">Nenhum lançamento neste mês.</p>
-                            <p className="text-zinc-300 text-sm mt-1">Clique em + para adicionar.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-1">
-                            {transactions.map((t) => (
-                                <TransactionItem
-                                    key={t.id}
-                                    transaction={t}
-                                    onEdit={(item: Transaction) => {
-                                        setEditingTransaction(item);
-                                        setIsEditModalOpen(true);
-                                    }}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                        </div>
-                    )}
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-12 border-2 border-dashed border-zinc-100 rounded-2xl bg-zinc-50/50">
+                  <p className="text-zinc-400 font-medium">Nenhum lançamento neste mês.</p>
+                  <p className="text-zinc-300 text-sm mt-1">Clique em + para adicionar.</p>
                 </div>
-            </TabsContent>
-
-            {/* ABA 2: GRÁFICOS (NOVO) */}
-            <TabsContent value="graphics" className="space-y-6 animate-in fade-in-50">
-                
-                {/* Totais Grandes */}
-                <div className="grid grid-cols-1 gap-3">
-                    <TotalCard title="Total Entradas" value={income} type="income" />
-                    <TotalCard title="Total Saídas" value={expense} type="expense" />
-                    <TotalCard title="Resultado do Mês" value={saldoTotal} type="balance" />
+              ) : (
+                <div className="space-y-1">
+                  {transactions.map((t) => (
+                    <TransactionItem
+                      key={t.id}
+                      transaction={t}
+                      onEdit={(item: Transaction) => {
+                        setEditingTransaction(item);
+                        setIsEditModalOpen(true);
+                      }}
+                      onDelete={handleDelete}
+                    />
+                  ))}
                 </div>
+              )}
+            </div>
+          </TabsContent>
 
-                {/* Gráfico de Barras */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-                    <h3 className="text-lg font-bold text-zinc-800 mb-6">Comparativo Visual</h3>
-                    <div className="h-[250px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                                <XAxis 
-                                    dataKey="name" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#a1a1aa', fontSize: 12 }} 
-                                    dy={10}
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#a1a1aa', fontSize: 12 }}
-                                    tickFormatter={(val) => `R$${val/1000}k`}
-                                />
-                                <Tooltip 
-                                    cursor={{ fill: '#f4f4f5' }}
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                />
-                                <Bar dataKey="valor" radius={[6, 6, 0, 0]} barSize={60}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+          {/* ABA 2: Gráficos */}
+          <TabsContent value="graphics" className="space-y-6 animate-in fade-in-50">
 
-            </TabsContent>
+            {/* Totais */}
+            <div className="grid grid-cols-1 gap-3">
+              <TotalCard title="Total Entradas" value={income} type="income" />
+              <TotalCard title="Total Saídas" value={expense} type="expense" />
+              <TotalCard title="Resultado do Mês" value={saldoTotal} type="balance" />
+            </div>
+
+            {/* Gráfico de barras */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
+              <h3 className="text-lg font-bold text-zinc-800 mb-6">Comparativo Visual</h3>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#a1a1aa', fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#a1a1aa', fontSize: 12 }}
+                      tickFormatter={(val) => `R$${val / 1000}k`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#f4f4f5' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    />
+                    <Bar dataKey="valor" radius={[6, 6, 0, 0]} barSize={60}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+          </TabsContent>
         </Tabs>
       </main>
 

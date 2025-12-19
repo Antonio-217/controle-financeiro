@@ -93,11 +93,11 @@ export function NewInvestmentModal({ children }: { children: React.ReactNode }) 
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs uppercase font-bold text-zinc-500">Nome do objetivo</FormLabel>
+                                        <FormLabel className="text-xs font-bold text-zinc-500">Nome do objetivo</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                                                <Input placeholder="Ex: Reserva de Emergência" {...field} className="pl-9 h-12 bg-zinc-50 border-transparent rounded-xl" />
+                                                <Input placeholder="Ex: Reserva de emergência" {...field} className="pl-9 h-12 bg-zinc-50 border-transparent rounded-xl" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -111,7 +111,7 @@ export function NewInvestmentModal({ children }: { children: React.ReactNode }) 
                                     name="target_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs uppercase font-bold text-zinc-500">Meta (Opcional)</FormLabel>
+                                            <FormLabel className="text-xs font-bold text-zinc-500">Meta (Opcional)</FormLabel>
                                             <FormControl>
                                                 <Input type="number" placeholder="0,00" {...field} className="h-12 bg-zinc-50 border-transparent rounded-xl" />
                                             </FormControl>
@@ -124,7 +124,7 @@ export function NewInvestmentModal({ children }: { children: React.ReactNode }) 
                                     name="initial_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs uppercase font-bold text-zinc-500">Começar com</FormLabel>
+                                            <FormLabel className="text-xs font-bold text-zinc-500">Começar com</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
