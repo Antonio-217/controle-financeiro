@@ -41,10 +41,10 @@ import {
   Loader2, 
   Banknote,
   Landmark,
-  X 
+  X ,
+  CalendarClock
 } from "lucide-react";
 
-// --- Schema Ajustado ---
 // Grupo e Categoria opcionais para permitir que o usuário limpe o campo
 const formSchema = z.object({
   description: z.string().min(2, "Mínimo 2 caracteres"),
@@ -54,6 +54,7 @@ const formSchema = z.object({
   subcategory_id: z.string().optional(),
   payment_method: z.string().min(1, "Obrigatório"),
   date: z.string(),
+  due_date: z.string().optional(),
 });
 
 type TransactionFormValues = z.infer<typeof formSchema>;
@@ -91,6 +92,7 @@ export function NewTransactionModal({
       subcategory_id: "",
       payment_method: "debit",
       date: new Date().toISOString().split("T")[0],
+      due_date: "",
     },
   });
 
@@ -106,6 +108,7 @@ export function NewTransactionModal({
           subcategory_id: transactionToEdit.subcategory_id,
           payment_method: transactionToEdit.payment_method,
           date: transactionToEdit.date,
+          due_date: transactionToEdit.due_date || "",
         });
       } else {
         form.reset({
@@ -116,6 +119,7 @@ export function NewTransactionModal({
           subcategory_id: "",
           payment_method: "debit",
           date: new Date().toISOString().split("T")[0],
+          due_date: "",
         });
       }
     }
@@ -141,13 +145,6 @@ export function NewTransactionModal({
 
   async function onSubmit(data: TransactionFormValues) {
     if (!user?.groupId || !user?.uid) return;
-    
-    // Validação Manual: Se quiser obrigar categoria, descomente abaixo.
-    // if (!data.category_group) {
-    //     toast.error("Selecione um grupo para organizar suas finanças.");
-    //     return;
-    // }
-
     setIsSaving(true);
 
     try {
@@ -155,10 +152,11 @@ export function NewTransactionModal({
         description: data.description,
         amount: Number(data.amount),
         type: data.type,
-        category_group: data.category_group || "", // Garante string vazia se undefined
+        category_group: data.category_group || "",
         subcategory_id: data.subcategory_id || "",
         payment_method: data.payment_method,
         date: data.date,
+        due_date: data.due_date || null,
       };
 
       if (transactionToEdit) {
@@ -205,7 +203,7 @@ export function NewTransactionModal({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit as any)}>
             
-            {/* --- HEADER NOVO (Estilo Investimento) --- */}
+            {/* --- Cabeçalho --- */}
             <div className="pt-8 pb-4 bg-white">
                 <DialogTitle className="text-center flex flex-col items-center gap-3">
                     {/* Ícone dentro do círculo */}
@@ -227,7 +225,7 @@ export function NewTransactionModal({
                     </span>
                 </DialogTitle>
 
-                {/* Toggle Switch (Pill Shape) */}
+                {/* Toggle Switch */}
                 <div className="flex justify-center gap-1 mt-5 bg-zinc-100 p-1.5 rounded-xl mx-auto w-fit">
                     <button 
                         type="button"
@@ -254,10 +252,10 @@ export function NewTransactionModal({
                 </div>
             </div>
 
-            {/* --- BODY --- */}
+            {/* --- Corpo --- */}
             <div className="px-6 pb-6 space-y-5">
               
-              {/* VALOR E DATA */}
+              {/* Valor e data */}
               <div className="grid grid-cols-[1.5fr_1fr] gap-4 mt-2">
                 <FormField
                   control={form.control as any}
@@ -303,7 +301,33 @@ export function NewTransactionModal({
                 />
               </div>
 
-              {/* DESCRIÇÃO */}
+              {/* Data de vencimento */}
+               {currentType === 'expense' && (
+                <FormField
+                  control={form.control as any}
+                  name="due_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-1">
+                        Vencimento <span className="text-zinc-400 font-normal lowercase">(opcional)</span>
+                      </FormLabel>
+                      <div className="relative">
+                        <CalendarClock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            {...field} 
+                            className="pl-9 h-12 bg-zinc-50 border-zinc-200 focus:bg-white transition-all text-sm font-medium" 
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+               )}
+
+              {/* Descrição */}
               <FormField
                 control={form.control as any}
                 name="description"
@@ -326,13 +350,13 @@ export function NewTransactionModal({
 
               <Separator className="bg-zinc-100" />
 
-              {/* GRUPO E CATEGORIA */}
+              {/* Grupo e categoria */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control as any}
                   name="category_group"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col w-full"> {/* w-full no container */}
+                    <FormItem className="flex flex-col w-full">
                       <div className="flex items-center justify-between h-[18px] mb-2">
                         <FormLabel className="text-xs font-bold text-zinc-500">Grupo</FormLabel>
                         {/* Botão limpar */}
@@ -395,7 +419,7 @@ export function NewTransactionModal({
                 />
               </div>
 
-              {/* FORMA DE PAGAMENTO */}
+              {/* Forma de pagamento */}
               <FormField
                 control={form.control as any}
                 name="payment_method"
@@ -454,7 +478,7 @@ export function NewTransactionModal({
                 }`}
               >
                 {isSaving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
-                {isSaving ? "Salvando..." : (transactionToEdit ? "Salvar Alterações" : "Confirmar")}
+                {isSaving ? "Salvando..." : (transactionToEdit ? "Salvar alterações" : "Confirmar")}
               </Button>
             </div>
           </form>

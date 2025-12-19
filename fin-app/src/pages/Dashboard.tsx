@@ -5,6 +5,7 @@ import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from "f
 
 import { NewTransactionModal } from "@/components/dashboard/NewTransactionModal";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   LogOut,
   TrendingUp,
@@ -14,7 +15,12 @@ import {
   Edit,
   Trash2,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  ChevronLeft,
+  ChevronRight,
+  CalendarClock,
+  PieChart,
+  List as ListIcon
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,8 +42,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Cell
+} from "recharts";
 
-// --- TIPOS ---
+// --- Tipos ---
 interface Transaction {
   id: string;
   description: string;
@@ -48,7 +64,9 @@ interface Transaction {
   created_at: any;
 }
 
-// --- COMPONENTES VISUAIS ---
+const formatMoney = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+// --- Componentes visuais ---
 // Card de Resumo (50/30/20)
 function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
   const percent = Math.min((amount / (meta || 1)) * 100, 100);
@@ -67,7 +85,7 @@ function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
       <div>
         <p className="text-sm text-zinc-500 mb-1">{title}</p>
         <h3 className="text-lg font-bold text-zinc-800">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount)}
+          {formatMoney(amount)}
         </h3>
         {/* Barra de Progresso */}
         <div className="w-full bg-zinc-100 h-1.5 rounded-full mt-2 overflow-hidden">
@@ -81,12 +99,32 @@ function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
   );
 }
 
+// Card de totais
+function TotalCard({ title, value, type }: { title: string, value: number, type: 'income' | 'expense' | 'balance' }) {
+    let color = 'text-zinc-800';
+    let bg = 'bg-white';
+    
+    if (type === 'income') color = 'text-emerald-600';
+    if (type === 'expense') color = 'text-red-600';
+    if (type === 'balance') color = value >= 0 ? 'text-zinc-900' : 'text-red-600';
+
+    return (
+        <div className="bg-white border border-zinc-100 p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center gap-1">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{title}</span>
+            <span className={`text-xl sm:text-2xl font-bold ${color}`}>{formatMoney(value)}</span>
+        </div>
+    )
+}
+
 // Item da Lista
 function TransactionItem({ transaction, onEdit, onDelete }: any) {
-
   const [isAlertOpen, setIsAlertOpen] = useState(false); // Controle do Alerta de Exclusão
   const isIncome = transaction.type === "income";
   const dateFormatted = new Date(transaction.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
+
+  // Vencimento
+  const isPending = !isIncome && transaction.status !== 'paid';
+  const dueDateFormatted = transaction.due_date ? new Date(transaction.due_date + "T12:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : null;
 
   // Lógica de Ícones e Cores
   let iconBg = "bg-zinc-100";
@@ -115,7 +153,7 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
         Icon = TrendingUp;
         break;
       default:
-        // SAÍDA SEM GRUPO
+        // Saída sem grupo
         iconBg = "bg-red-50";
         iconColor = "text-red-500";
         Icon = ArrowDownLeft;
@@ -123,7 +161,7 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
     }
   }
 
-  // Lógica para o Texto da Categoria
+  // Lógica para o texto da categoria
   const categoryLabel = () => {
     if (isIncome) return 'Receita';
     if (transaction.category_group === 'needs') return 'Necessidades';
@@ -156,10 +194,10 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
           {/* Valor */}
           <span className={`font-bold text-sm sm:text-base ${isIncome ? 'text-emerald-600' : 'text-zinc-800'}`}>
             {isIncome ? '+ ' : '- '}
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
+            {formatMoney(transaction.amount)}
           </span>
 
-          {/* Menu Dropdown */}
+          {/* Menu dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0 text-zinc-300 hover:text-zinc-600">
@@ -212,9 +250,10 @@ function TransactionItem({ transaction, onEdit, onDelete }: any) {
   );
 }
 
-// --- COMPONENTE PRINCIPAL ---
+// --- Componente principal ---
 export function Dashboard() {
   const { user, logout } = useAuth();
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [income, setIncome] = useState(0);
@@ -224,12 +263,35 @@ export function Dashboard() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Navegação de Data
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const monthLabel = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
   // Snapshot do Firebase
   useEffect(() => {
     if (!user?.groupId) return;
+    setLoading(true);
+
+    // Definir início e fim do mês para o filtro
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // Início: primeiro dia do mês
+    const startStr = new Date(year, month, 1).toISOString().split('T')[0];
+    // Fim: último dia do mês
+    const endStr = new Date(year, month + 1, 0).toISOString().split('T')[0];
+
     const q = query(
       collection(db, "transactions"),
       where("group_id", "==", user.groupId),
+      where("date", ">=", startStr),
+      where("date", "<=", endStr),
       orderBy("date", "desc"),
       orderBy("created_at", "desc")
     );
@@ -237,21 +299,66 @@ export function Dashboard() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Transaction[];
       setTransactions(data);
       calculateSummaries(data);
+      checkNotifications(data);
       setLoading(false);
+    }, (error) => {
+        console.error("Erro ao buscar transações:", error);
+        if (error.message.includes("indexes")) {
+            toast.error("Configuração necessária: Verifique o console para criar o índice no Firebase.");
+        }
+        setLoading(false);
     });
     return () => unsubscribe();
-  }, [user?.groupId]);
+  }, [user?.groupId, currentDate]);
 
   function calculateSummaries(data: Transaction[]) {
     let totalIncome = 0;
+    let totalExpense = 0;
     const currentTotals = { needs: 0, wants: 0, savings: 0 };
+
     data.forEach(t => {
-      if (t.type === "income") totalIncome += t.amount;
-      else if (currentTotals[t.category_group] !== undefined) currentTotals[t.category_group] += t.amount;
+      if (t.type === "income") {
+        totalIncome += t.amount;
+      } else {
+        totalExpense += t.amount;
+        if (currentTotals[t.category_group] !== undefined) {
+          currentTotals[t.category_group] += t.amount;
+        }
+      }
     });
     setIncome(totalIncome);
+    setExpense(totalExpense);
     setTotals(currentTotals);
   }
+
+  // Sistema de Notificação de Vencimentos
+  const checkNotifications = (data: Transaction[]) => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    let dueCount = 0;
+
+    data.forEach(t => {
+        if (t.type === 'expense' && t.due_date) {
+            const due = new Date(t.due_date + "T12:00:00");
+            // Diferença em dias
+            const diffTime = due.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+            // Se vence hoje ou nos próximos 3 dias
+            if (diffDays >= 0 && diffDays <= 3) {
+                dueCount++;
+            }
+        }
+    });
+
+    if (dueCount > 0) {
+        toast.info(`Atenção: Você tem ${dueCount} contas vencendo em breve!`, {
+            duration: 5000,
+            icon: <CalendarClock className="w-5 h-5 text-orange-500" />
+        });
+    }
+  };
 
   async function handleDelete(id: string) {
     if (window.confirm("Excluir lançamento?")) {
@@ -265,7 +372,13 @@ export function Dashboard() {
     }
   }
 
-  const saldoTotal = income - (totals.needs + totals.wants + totals.savings);
+  const saldoTotal = income - expense;
+
+  // Dados para o Gráfico
+  const chartData = [
+    { name: 'Entradas', valor: income, fill: '#10b981' },
+    { name: 'Saídas', valor: expense, fill: '#ef4444' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -273,6 +386,7 @@ export function Dashboard() {
       {/* HEADER */}
       <header className="bg-white pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm mb-6">
         <div className="max-w-lg mx-auto">
+          {/* Top Bar */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold text-lg">
@@ -288,10 +402,24 @@ export function Dashboard() {
             </Button>
           </div>
 
-          <div className="text-center">
-            <p className="text-zinc-500 text-sm mb-1">Saldo atual</p>
+          {/* Seletor de Mês e Saldo */}
+          <div className="flex flex-col items-center justify-center">
+            
+            <div className="flex items-center gap-4 mb-2 bg-zinc-50 rounded-full p-1 pr-4 pl-1 border border-zinc-100">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white shadow-sm hover:bg-zinc-100" onClick={handlePrevMonth}>
+                    <ChevronLeft className="h-4 w-4 text-zinc-600" />
+                </Button>
+                <span className="text-sm font-semibold text-zinc-700 capitalize w-32 text-center select-none">
+                    {monthLabel}
+                </span>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white shadow-sm hover:bg-zinc-100" onClick={handleNextMonth}>
+                    <ChevronRight className="h-4 w-4 text-zinc-600" />
+                </Button>
+            </div>
+
+            <p className="text-zinc-500 text-sm mb-1 mt-2">Saldo em {currentDate.toLocaleDateString('pt-BR', {month: 'long'})}</p>
             <h1 className={`text-4xl font-extrabold ${saldoTotal >= 0 ? 'text-zinc-900' : 'text-red-600'}`}>
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saldoTotal)}
+              {formatMoney(saldoTotal)}
             </h1>
           </div>
         </div>
@@ -299,63 +427,108 @@ export function Dashboard() {
 
       <main className="max-w-lg mx-auto px-4 sm:px-6">
 
-        {/* Seção 50/30/20 (Grid de 3 colunas) */}
-        <div className="mb-8">
-          <h3 className="text-lg font-bold text-zinc-800 mb-4 px-2">Planejamento</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <SummaryCard
-              title="Necessidades"
-              amount={totals.needs}
-              meta={income * 0.5}
-              colorClass="bg-blue-500"
-              icon={Wallet}
-            />
-            <SummaryCard
-              title="Estilo de vida"
-              amount={totals.wants}
-              meta={income * 0.3}
-              colorClass="bg-orange-500"
-              icon={ShoppingBag}
-            />
-            <SummaryCard
-              title="Futuro"
-              amount={totals.savings}
-              meta={income * 0.2}
-              colorClass="bg-emerald-500"
-              icon={TrendingUp}
-            />
-          </div>
-        </div>
+        <Tabs defaultValue="list" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-200/50 p-1 rounded-xl">
+                <TabsTrigger value="list" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold">
+                    <ListIcon className="w-4 h-4 mr-2" /> Extrato
+                </TabsTrigger>
+                <TabsTrigger value="graphics" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold">
+                    <PieChart className="w-4 h-4 mr-2" /> Relatórios
+                </TabsTrigger>
+            </TabsList>
 
-        {/* Seção de Lista de Transações */}
-        <div>
-          <div className="flex justify-between items-end mb-4 px-2">
-            <h3 className="text-lg font-bold text-zinc-800">Transações</h3>
-            <span className="text-xs text-zinc-400 font-medium">Últimos lançamentos</span>
-          </div>
+            {/* ABA 1: LISTAGEM (PADRÃO) */}
+            <TabsContent value="list" className="space-y-6 animate-in fade-in-50">
+                {/* 50/30/20 Resumo */}
+                <div>
+                    <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 px-1">Planejamento Mensal</h3>
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                        <SummaryCard title="Necessidades" amount={totals.needs} meta={income * 0.5} colorClass="bg-blue-500" icon={Wallet} />
+                        <SummaryCard title="Estilo Vida" amount={totals.wants} meta={income * 0.3} colorClass="bg-orange-500" icon={ShoppingBag} />
+                        <SummaryCard title="Futuro" amount={totals.savings} meta={income * 0.2} colorClass="bg-emerald-500" icon={TrendingUp} />
+                    </div>
+                </div>
 
-          {loading ? (
-            <p className="text-center text-zinc-400 py-10">Carregando...</p>
-          ) : transactions.length === 0 ? (
-            <div className="text-center py-10 opacity-50">
-              <p>Nenhum lançamento ainda.</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {transactions.map((t) => (
-                <TransactionItem
-                  key={t.id}
-                  transaction={t}
-                  onEdit={(item: Transaction) => {
-                    setEditingTransaction(item);
-                    setIsEditModalOpen(true);
-                  }}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+                {/* Lista */}
+                <div>
+                    <div className="flex justify-between items-end mb-4 px-1">
+                        <h3 className="text-lg font-bold text-zinc-800">Transações</h3>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-10 gap-3">
+                            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-zinc-400 text-sm">Atualizando...</p>
+                        </div>
+                    ) : transactions.length === 0 ? (
+                        <div className="text-center py-12 border-2 border-dashed border-zinc-100 rounded-2xl bg-zinc-50/50">
+                            <p className="text-zinc-400 font-medium">Nenhum lançamento neste mês.</p>
+                            <p className="text-zinc-300 text-sm mt-1">Clique em + para adicionar.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-1">
+                            {transactions.map((t) => (
+                                <TransactionItem
+                                    key={t.id}
+                                    transaction={t}
+                                    onEdit={(item: Transaction) => {
+                                        setEditingTransaction(item);
+                                        setIsEditModalOpen(true);
+                                    }}
+                                    onDelete={handleDelete}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </TabsContent>
+
+            {/* ABA 2: GRÁFICOS (NOVO) */}
+            <TabsContent value="graphics" className="space-y-6 animate-in fade-in-50">
+                
+                {/* Totais Grandes */}
+                <div className="grid grid-cols-1 gap-3">
+                    <TotalCard title="Total Entradas" value={income} type="income" />
+                    <TotalCard title="Total Saídas" value={expense} type="expense" />
+                    <TotalCard title="Resultado do Mês" value={saldoTotal} type="balance" />
+                </div>
+
+                {/* Gráfico de Barras */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
+                    <h3 className="text-lg font-bold text-zinc-800 mb-6">Comparativo Visual</h3>
+                    <div className="h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#a1a1aa', fontSize: 12 }} 
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#a1a1aa', fontSize: 12 }}
+                                    tickFormatter={(val) => `R$${val/1000}k`}
+                                />
+                                <Tooltip 
+                                    cursor={{ fill: '#f4f4f5' }}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                />
+                                <Bar dataKey="valor" radius={[6, 6, 0, 0]} barSize={60}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+            </TabsContent>
+        </Tabs>
       </main>
 
       {/* Modal de Edição */}
