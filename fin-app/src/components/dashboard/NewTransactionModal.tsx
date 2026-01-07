@@ -33,7 +33,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
-  CalendarIcon,
   Tag,
   CreditCard,
   ArrowDownCircle,
@@ -113,7 +112,6 @@ export function NewTransactionModal({
       } else {
         form.reset({
           description: "",
-          amount: 0,
           type: "expense", // Padrão Saída
           category_group: "",
           subcategory_id: "",
@@ -283,12 +281,11 @@ export function NewTransactionModal({
                     <FormItem>
                       <FormLabel className="text-xs font-bold text-zinc-500">Data</FormLabel>
                       <div className="relative">
-                        <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
                         <FormControl>
                           <Input
                             type="date"
                             {...field}
-                            className="pl-9 h-12 bg-zinc-50 border-zinc-200 focus:bg-white transition-all text-sm font-medium"
+                            className="h-12 bg-zinc-50 border-zinc-200 focus:bg-white transition-all text-sm font-medium"
                           />
                         </FormControl>
                       </div>

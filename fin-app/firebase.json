@@ -1,8 +1,7 @@
 {
   "hosting": {
-    "target": "app",
+    "target": "controle-financeiro",
     "public": "dist",
-    "source": ".",
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "controle-financeiro-d0725"
-  }
+  },
+  "targets": {
+    "controle-financeiro-d0725": {
+      "hosting": {
+        "controle-financeiro": [
+          "controlefin"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
