@@ -4,7 +4,7 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
-import { NewInvestmentModal } from "@/components/investments/NewInvestmentModal";
+import { NewInvestmentModal } from "@/features/investments/NewInvestmentModal";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";

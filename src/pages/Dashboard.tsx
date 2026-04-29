@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 
-import { NewTransactionModal } from "@/components/dashboard/NewTransactionModal";
+import { NewTransactionModal } from "@/features/dashboard/NewTransactionModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -69,7 +69,6 @@ interface Transaction {
 const formatMoney = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
 // --- Componentes visuais ---
-// Card de Resumo (50/30/20)
 function SummaryCard({ title, amount, meta, colorClass, icon: Icon }: any) {
   const percent = Math.min((amount / (meta || 1)) * 100, 100);
   const isOver = amount > meta && meta > 0;

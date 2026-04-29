@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, DollarSign, Mail, Lock, User } from "lucide-react";
+import { Loader2, DollarSign, Mail, Lock, User, Users } from "lucide-react";
 import { toast } from "sonner";
+import * as animeModule from "animejs";
+const anime = animeModule.default || animeModule;
 
 export function Login() {
   const { signInWithGoogle, authenticateWithEmail, user, loading } = useAuth();
+  
   // Estados do Formulário
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -15,7 +18,27 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  // Se não estiver logado retorna ao login
+  const [familyId, setFamilyId] = useState("");
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Animação de Entrada (Mount)
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.visibility = 'visible';
+      
+      anime({
+        targets: containerRef.current.children,
+        translateY: [30, 0],
+        opacity: [0, 1],
+        delay: anime.stagger(100),
+        duration: 800,
+        easing: 'easeOutExpo'
+      });
+    }
+  }, []);
+
+  // Se já estiver logado, redireciona para a Home
   if (user) return <Navigate to="/" replace />;
 
   if (loading) {
@@ -47,7 +70,7 @@ export function Login() {
     }
     setIsLoggingIn(true);
     try {
-      await authenticateWithEmail(email, password, isRegistering, name);
+      await authenticateWithEmail(email, password, isRegistering, name, familyId);
     } catch (error: any) {
       console.error("Erro Email", error);
       let msg = "Erro ao autenticar.";
@@ -63,8 +86,9 @@ export function Login() {
 
   return (
     <div className="min-h-screen w-full grid place-items-center bg-zinc-950 p-4">
-      {/* CARTÃO DE LOGIN */}
-      <div className="w-full max-w-[400px] flex flex-col gap-8">
+
+      <div ref={containerRef} className="w-full max-w-[400px] flex flex-col gap-8">
+        
         {/* CABEÇALHO */}
         <div className="flex flex-col items-center text-center gap-4">
           <div className="h-16 w-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center shadow-2xl shadow-emerald-900/10">
@@ -73,31 +97,47 @@ export function Login() {
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">FinApp</h1>
             <p className="text-zinc-400 mt-2">
-              {isRegistering ? "Crie sua conta gratuita" : "Controle financeiro 50/30/20"}
+              {isRegistering ? "Crie sua conta e configure seu mapa" : "Controle financeiro agnóstico"}
             </p>
           </div>
         </div>
 
         {/* FORMULÁRIO */}
         <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
-          
           <div className="flex flex-col gap-4">
             
-            {/* Campo Nome (Apenas no Cadastro) */}
+            {/* Campos Dinâmicos (Apenas no Cadastro) */}
             {isRegistering && (
-              <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
-                  <User className="h-5 w-5" />
+                <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 ease-out fill-mode-both">
+                {/* Campo Nome */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <Input 
+                    placeholder="Seu Nome" 
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
+                    required={isRegistering}
+                  />
                 </div>
-                <Input 
-                  placeholder="Seu Nome" 
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100"
-                  required
-                />
+
+                {/* Campo Family ID */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <Input 
+                    placeholder="ID da Família (Opcional)" 
+                    value={familyId}
+                    onChange={e => setFamilyId(e.target.value)}
+                    className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
+                  />
+                </div>
               </div>
             )}
+
             {/* Email */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
@@ -108,10 +148,11 @@ export function Login() {
                 placeholder="Email" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100"
+                className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
                 required
               />
             </div>
+
             {/* Senha */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
@@ -122,13 +163,13 @@ export function Login() {
                 placeholder="Senha" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100"
+                className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
                 required
               />
             </div>
           </div>
 
-          {/* Botão de Ação (Login ou Cadastro) */}
+          {/* Botão de Ação */}
           <Button 
             type="submit"
             disabled={isLoggingIn}
@@ -136,7 +177,6 @@ export function Login() {
           >
             {isLoggingIn ? <Loader2 className="animate-spin" /> : (isRegistering ? "Criar conta" : "Entrar")}
           </Button>
-
         </form>
 
         {/* Separador */}
@@ -167,12 +207,20 @@ export function Login() {
           {isRegistering ? "Já tem uma conta? " : "Não tem uma conta? "}
           <button 
             type="button"
-            onClick={() => setIsRegistering(!isRegistering)}
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              // Limpar campos exclusivos de registro ao voltar para login
+              if (isRegistering) {
+                setName("");
+                setFamilyId("");
+              }
+            }}
             className="text-emerald-500 font-bold hover:underline"
           >
             {isRegistering ? "Faça login" : "Registre-se"}
           </button>
         </p>
+
       </div>
     </div>
   );

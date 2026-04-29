@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, TrendingUp, Plus } from "lucide-react";
-import { NewTransactionModal } from "../dashboard/NewTransactionModal";
+import { NewTransactionModal } from "../../features/dashboard/NewTransactionModal";
 import { Button } from "../ui/button";
 
 export function BottomMenu() {
