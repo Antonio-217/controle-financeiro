@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { Blueprint, Group, Subgroup } from '../@types/blueprint';
+import type { Blueprint, Group, Subgroup } from '@/types/blueprint';
+import { blueprintService } from '@/services/blueprintService';
+import { toast } from 'sonner';
 
 interface BlueprintState {
   // Estado
@@ -11,57 +13,84 @@ interface BlueprintState {
   setLoading: (loading: boolean) => void;
 
   // Ações de manipulação
-  addGroup: (group: Group) => void;
-  removeGroup: (groupId: string) => void;
-  addSubgroup: (groupId: string, subgroup: Subgroup) => void;
+  addGroup: (group: Group) => Promise<void>;
+  removeGroup: (groupId: string) => Promise<void>;
+  addSubgroup: (groupId: string, subgroup: Subgroup) => Promise<void>;
 }
 
-export const useBlueprintStore = create<BlueprintState>((set) => ({
+export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   blueprint: null,
   isLoading: true,
 
   setBlueprint: (blueprint) => set({ blueprint }),
-  
   setLoading: (isLoading) => set({ isLoading }),
 
-  addGroup: (group) => 
-    set((state) => {
-      if (!state.blueprint) return state;
-      return {
-        blueprint: {
-          ...state.blueprint,
-          groups: [...state.blueprint.groups, group],
-        },
-      };
-    }),
+  addGroup: async (group) => {
+    const currentState = get();
+    if (!currentState.blueprint) return;
 
-  removeGroup: (groupId) =>
-    set((state) => {
-      if (!state.blueprint) return state;
-      return {
-        blueprint: {
-          ...state.blueprint,
-          groups: state.blueprint.groups.filter((g) => g.id !== groupId),
-        },
-      };
-    }),
+    const updatedGroups = [...currentState.blueprint.groups, group];
 
-  addSubgroup: (groupId, subgroup) =>
-    set((state) => {
-      if (!state.blueprint) return state;
-      return {
-        blueprint: {
-          ...state.blueprint,
-          groups: state.blueprint.groups.map((group) => {
-            if (group.id === groupId) {
-              return {
-                ...group,
-                subgroups: [...group.subgroups, subgroup],
-              };
-            }
-            return group;
-          }),
-        },
-      };
-    }),
+    set({
+      blueprint: {
+        ...currentState.blueprint,
+        groups: updatedGroups,
+      },
+    });
+
+    try {
+      await blueprintService.syncGroups(currentState.blueprint.familyId, updatedGroups);
+    } catch (error) {
+      console.error("Falha ao salvar no banco:", error);
+      toast.error("Ocorreu um erro ao salvar na nuvem, mas o dado está salvo no seu dispositivo.");
+    }
+  },
+
+  removeGroup: async (groupId) => {
+    const currentState = get();
+    if (!currentState.blueprint) return;
+
+    const updatedGroups = currentState.blueprint.groups.filter((g) => g.id !== groupId);
+
+    set({
+      blueprint: {
+        ...currentState.blueprint,
+        groups: updatedGroups,
+      },
+    });
+
+    try {
+      await blueprintService.syncGroups(currentState.blueprint.familyId, updatedGroups);
+    } catch (error) {
+      console.error("Falha ao remover no banco:", error);
+    }
+  },
+
+  addSubgroup: async (groupId, subgroup) => {
+    const currentState = get();
+    if (!currentState.blueprint) return;
+
+    const updatedGroups = currentState.blueprint.groups.map((group) => {
+      if (group.id === groupId) {
+        return {
+          ...group,
+          subgroups: [...group.subgroups, subgroup],
+        };
+      }
+      return group;
+    });
+
+    set({
+      blueprint: {
+        ...currentState.blueprint,
+        groups: updatedGroups,
+      },
+    });
+
+    try {
+      await blueprintService.syncGroups(currentState.blueprint.familyId, updatedGroups);
+    } catch (error) {
+      console.error("Falha ao adicionar subgrupo no banco:", error);
+    }
+  },
 }));

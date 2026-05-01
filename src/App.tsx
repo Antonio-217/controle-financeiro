@@ -3,9 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import { Login } from "./pages/Login";
-import { Dashboard } from "./pages/Dashboard";
-import { Investments } from "./pages/Investments";
-import { Layout } from "./components/layout/Layout";
+// import { Home } from "./pages/Home";
+import { MainLayout } from "./components/layout/MainLayout";
 
 // Componente para proteger rotas privadas
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -28,9 +27,9 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
 
-        <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/investments" element={<Investments />} />
+        <Route element={<PrivateRoute> <MainLayout/> </PrivateRoute>}>
+          {/* <Route path="/" element={<Home />} /> */}
+          <Route path="/settings" element={<div>Tela de Configurações em breve</div>} />
         </Route>
 
       </Routes>

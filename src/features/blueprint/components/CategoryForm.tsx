@@ -1,0 +1,132 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, X, Percent } from "lucide-react";
+import { toast } from "sonner";
+import { useBlueprintStore } from "@/store/useBlueprintStore";
+
+interface CategoryFormProps {
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
+  const addGroup = useBlueprintStore((state) => state.addGroup);
+
+  const [name, setName] = useState("");
+  const [percentage, setPercentage] = useState("");
+  const [subcategories, setSubcategories] = useState([{ id: crypto.randomUUID(), name: "" }]);
+
+  const addSubcategory = () => {
+    setSubcategories([...subcategories, { id: crypto.randomUUID(), name: "" }]);
+  };
+
+  const removeSubcategory = (idToRemove: string) => {
+    if (subcategories.length === 1) return;
+    setSubcategories(subcategories.filter(sub => sub.id !== idToRemove));
+  };
+
+  const updateSubcategory = (id: string, newName: string) => {
+    setSubcategories(subcategories.map(sub => 
+      sub.id === id ? { ...sub, name: newName } : sub
+    ));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name || !percentage) {
+      toast.warning("Preencha o nome e a porcentagem da categoria.");
+      return;
+    }
+
+    const validSubcategories = subcategories.filter(sub => sub.name.trim() !== "").map(sub => ({ id: sub.id, name: sub.name }));;
+
+    const newGroup = {
+      id: crypto.randomUUID(),
+      name,
+      targetPercentage: Number(percentage),
+      color: "bg-emerald-500",
+      subgroups: validSubcategories
+    };
+
+    addGroup(newGroup);
+    
+    toast.success(`Pote "${name}" criado com sucesso!`);
+    onSuccess();
+  };
+
+  return (
+    <form id="category-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="text-xs text-gray-500 mb-1.5 block">Nome da categoria</label>
+          <Input 
+            placeholder="Ex: Liberdade financeira" 
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="bg-zinc-100 border-zinc-300 focus-visible:ring-emerald-500"
+          />
+        </div>
+        <div className="w-28">
+          <label className="text-xs text-gray-500 mb-1.5 block">Alvo (%)</label>
+          <div className="relative">
+            <Input 
+              type="number" 
+              placeholder="20" 
+              value={percentage}
+              onChange={(e) => setPercentage(e.target.value)}
+              className="bg-zinc-100 border-zinc-300 pr-8 focus-visible:ring-emerald-500"
+            />
+            <Percent className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-gray-500">Subcategorias (Opcional)</label>
+          <button 
+            type="button" 
+            onClick={addSubcategory}
+            className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-500 transition-colors"
+          >
+            <Plus className="h-3 w-3"/> Adicionar
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto pl-1 pr-1 pb-1 scrollbar-thin scrollbar-thumb-zinc-800">
+          {subcategories.map((sub, index) => (
+            <div key={sub.id} className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+              <Input 
+                placeholder={`Ex: ${index === 0 ? 'Reserva de emergência' : 'Tesouro direto'}`}
+                value={sub.name}
+                onChange={(e) => updateSubcategory(sub.id, e.target.value)}
+                className="bg-zinc-100 border-zinc-300 text-sm text-zinc-900 focus-visible:ring-emerald-500"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeSubcategory(sub.id)}
+                className="h-10 w-10 text-gray-500 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                disabled={subcategories.length === 1}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-2 flex justify-end gap-3">
+        <Button type="button" variant="ghost" onClick={onCancel} className="text-gray-500 hover:text-zinc-600">
+          Cancelar
+        </Button>
+        <Button type="submit" form="category-form" className="bg-emerald-600 hover:bg-emerald-500 text-white">
+          Salvar
+        </Button>
+      </div>
+    </form>
+  );
+}

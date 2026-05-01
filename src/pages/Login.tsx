@@ -1,12 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, DollarSign, Mail, Lock, User, Users } from "lucide-react";
+import { Loader2, DollarSign, Mail, Lock, User, Users, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import * as animeModule from "animejs";
-const anime = animeModule.default || animeModule;
 
 export function Login() {
   const { signInWithGoogle, authenticateWithEmail, user, loading } = useAuth();
@@ -14,29 +12,12 @@ export function Login() {
   // Estados do Formulário
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [familyId, setFamilyId] = useState("");
-
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Animação de Entrada (Mount)
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.style.visibility = 'visible';
-      
-      anime({
-        targets: containerRef.current.children,
-        translateY: [30, 0],
-        opacity: [0, 1],
-        delay: anime.stagger(100),
-        duration: 800,
-        easing: 'easeOutExpo'
-      });
-    }
-  }, []);
 
   // Se já estiver logado, redireciona para a Home
   if (user) return <Navigate to="/" replace />;
@@ -78,6 +59,8 @@ export function Login() {
       if (error.code === 'auth/invalid-credential') msg = "Email ou senha incorretos.";
       if (error.code === 'auth/email-already-in-use') msg = "Este email já está cadastrado.";
       if (error.code === 'auth/weak-password') msg = "A senha deve ter pelo menos 6 caracteres.";
+
+      if (error.message.includes("ID da família não encontrado")) msg = "ID da família não encontrado. Deixe em branco para criar uma nova.";
       
       toast.error(msg);
       setIsLoggingIn(false);
@@ -86,8 +69,9 @@ export function Login() {
 
   return (
     <div className="min-h-screen w-full grid place-items-center bg-zinc-950 p-4">
-
-      <div ref={containerRef} className="w-full max-w-[400px] flex flex-col gap-8">
+      
+      {/* Contêiner Principal */}
+      <div className="w-full max-w-[400px] flex flex-col gap-8 animate-in fade-in zoom-in-95 slide-in-from-bottom-8 duration-700 ease-out fill-mode-both">
         
         {/* CABEÇALHO */}
         <div className="flex flex-col items-center text-center gap-4">
@@ -97,7 +81,7 @@ export function Login() {
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">FinApp</h1>
             <p className="text-zinc-400 mt-2">
-              {isRegistering ? "Crie sua conta e configure seu mapa" : "Controle financeiro agnóstico"}
+              {isRegistering ? "Crie sua conta e explore todo o seu potencial." : "Controle financeiro customizável."}
             </p>
           </div>
         </div>
@@ -106,16 +90,16 @@ export function Login() {
         <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
           <div className="flex flex-col gap-4">
             
-            {/* Campos Dinâmicos (Apenas no Cadastro) */}
+            {/* Campos Dinâmicos */}
             {isRegistering && (
-                <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 ease-out fill-mode-both">
+              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300 ease-out fill-mode-both">
                 {/* Campo Nome */}
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
                     <User className="h-5 w-5" />
                   </div>
                   <Input 
-                    placeholder="Seu Nome" 
+                    placeholder="Seu nome" 
                     value={name}
                     onChange={e => setName(e.target.value)}
                     className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
@@ -129,7 +113,7 @@ export function Login() {
                     <Users className="h-5 w-5" />
                   </div>
                   <Input 
-                    placeholder="ID da Família (Opcional)" 
+                    placeholder="ID da família (Opcional)" 
                     value={familyId}
                     onChange={e => setFamilyId(e.target.value)}
                     className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
@@ -159,13 +143,20 @@ export function Login() {
                 <Lock className="h-5 w-5" />
               </div>
               <Input 
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 placeholder="Senha" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="pl-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
+                className="pl-12 pr-12 h-14 bg-zinc-900 border-zinc-800 text-lg rounded-xl text-zinc-100 placeholder:text-zinc-500"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-400 transition-colors focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
           </div>
 
@@ -209,7 +200,6 @@ export function Login() {
             type="button"
             onClick={() => {
               setIsRegistering(!isRegistering);
-              // Limpar campos exclusivos de registro ao voltar para login
               if (isRegistering) {
                 setName("");
                 setFamilyId("");
