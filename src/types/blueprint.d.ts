@@ -17,5 +17,5 @@ export interface Blueprint {
   familyId: string;    // A qual família este mapa pertence
   monthYear: string;   // Ex: "05/2026" (permite ter históricos/mudanças)
   groups: Group[];
-  updatedAt: Date;
+  updatedAt: string;
 }

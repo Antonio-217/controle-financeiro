@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import { Login } from "./pages/Login";
-// import { Home } from "./pages/Home";
+import { Home } from "./pages/Home";
 import { MainLayout } from "./components/layout/MainLayout";
 
 // Componente para proteger rotas privadas
@@ -28,7 +28,7 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route element={<PrivateRoute> <MainLayout/> </PrivateRoute>}>
-          {/* <Route path="/" element={<Home />} /> */}
+          <Route path="/" element={<Home />} />
           <Route path="/settings" element={<div>Tela de Configurações em breve</div>} />
         </Route>
 

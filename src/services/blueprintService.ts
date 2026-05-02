@@ -1,31 +1,42 @@
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Group } from "@/types/blueprint"; 
+import type { Group, Blueprint } from "@/types/blueprint";
 
 export const blueprintService = {
-  /**
-   * Sincroniza a lista de Potes (Grupos) no Firebase.
-   */
+  async getBlueprint(familyId: string): Promise<Blueprint | null> {
+    const blueprintsRef = collection(db, "blueprints");
+    const q = query(blueprintsRef, where("familyId", "==", familyId));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as Blueprint;
+    }
+    return null;
+  },
+
   async syncGroups(familyId: string, newGroups: Group[]) {
     try {
-      // Procura qual é o documento de Blueprint pertencente a essa família
       const blueprintsRef = collection(db, "blueprints");
       const q = query(blueprintsRef, where("familyId", "==", familyId));
       const querySnapshot = await getDocs(q);
 
-      if (querySnapshot.empty) {
-        throw new Error("Nenhum mapa financeiro encontrado para esta família.");
+      let blueprintDocId;
+
+      // Se o usuário já tem um Blueprint, pegamos o ID dele
+      if (!querySnapshot.empty) {
+        blueprintDocId = querySnapshot.docs[0].id;
+      } else {
+        // Se for a primeira vez, geramos um ID novo para criar o documento
+        blueprintDocId = crypto.randomUUID();
       }
 
-      // Pega o ID exato do documento gerado pelo Firebase
-      const blueprintDocId = querySnapshot.docs[0].id;
       const docRef = doc(db, "blueprints", blueprintDocId);
 
-      // Atualiza o array de grupos com os dados novos
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        familyId: familyId,
         groups: newGroups,
-        updatedAt: new Date(),
-      });
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
 
     } catch (error) {
       console.error("Erro ao sincronizar com o Firestore:", error);

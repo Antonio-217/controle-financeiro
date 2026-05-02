@@ -65,7 +65,7 @@ export function MainLayout() {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/settings")}
-              className="text-zinc-400 hover:text-emerald-500 hover:bg-zinc-900 rounded-full transition-colors"
+              className="text-zinc-400 hover:text-emerald-500 p-1.5 hover:bg-emerald-500/10 rounded transition-colors"
             >
               <Settings className="h-5 w-5" />
             </Button>
@@ -74,7 +74,7 @@ export function MainLayout() {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="text-zinc-400 hover:text-red-400 hover:bg-red-950/30 rounded-full transition-colors"
+              className="text-zinc-400 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="h-5 w-5" />
             </Button>
@@ -87,7 +87,6 @@ export function MainLayout() {
       <main className="flex-1 w-full max-w-4xl mx-auto p-4 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out fill-mode-both">
         <Outlet />
       </main>
-
 
       {/* MENU INFERIOR */}
       <BottomNav />

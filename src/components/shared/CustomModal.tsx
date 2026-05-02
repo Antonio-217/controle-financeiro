@@ -1,6 +1,8 @@
+import React from "react";
+
 interface ModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   title: string;
   description?: string;
   children: React.ReactNode;
@@ -9,18 +11,28 @@ interface ModalProps {
 
 export function CustomModal({ isOpen, onClose, title, description, children, footer }: ModalProps) {
   if (!isOpen) return null;
+  if (!onClose) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
-          {description && <p className="text-sm text-gray-500">{description}</p>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      
+      <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        
+        <div className="mb-5">
+          <h2 className="text-xl font-bold text-zinc-100 tracking-wide">{title}</h2>
+          {description && <p className="text-sm text-zinc-400 mt-1.5">{description}</p>}
         </div>
         
         <div className="py-0">
           {children}
         </div>
+
+        {footer && (
+          <div className="mt-6 flex justify-end gap-3">
+            {footer}
+          </div>
+        )}
+        
       </div>
     </div>
   );

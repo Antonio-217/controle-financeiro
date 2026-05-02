@@ -13,9 +13,11 @@ interface BlueprintState {
   setLoading: (loading: boolean) => void;
 
   // Ações de manipulação
-  addGroup: (group: Group) => Promise<void>;
+  fetchBlueprint: (familyId: string) => Promise<void>;
+  addGroup: (group: Group, familyId: string) => Promise<void>;
   removeGroup: (groupId: string) => Promise<void>;
   addSubgroup: (groupId: string, subgroup: Subgroup) => Promise<void>;
+  removeSubgroup: (groupId: string, subgroupId: string) => Promise<void>;
 }
 
 export const useBlueprintStore = create<BlueprintState>((set, get) => ({
@@ -25,24 +27,43 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   setBlueprint: (blueprint) => set({ blueprint }),
   setLoading: (isLoading) => set({ isLoading }),
 
-  addGroup: async (group) => {
-    const currentState = get();
-    if (!currentState.blueprint) return;
-
-    const updatedGroups = [...currentState.blueprint.groups, group];
-
-    set({
-      blueprint: {
-        ...currentState.blueprint,
-        groups: updatedGroups,
-      },
-    });
-
+  fetchBlueprint: async (familyId) => {
+    set({ isLoading: true });
     try {
-      await blueprintService.syncGroups(currentState.blueprint.familyId, updatedGroups);
+      const bp = await blueprintService.getBlueprint(familyId);
+      set({ blueprint: bp });
+    } catch (error) {
+      console.error("Erro ao buscar Blueprint:", error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  addGroup: async (group, familyId) => {
+    const currentState = get();
+
+    // Se o Blueprint não existir, criamos a estrutura base do zero
+    const currentBlueprint: Blueprint = currentState.blueprint || {
+      id: crypto.randomUUID(),
+      familyId: familyId,
+      monthYear: new Date().toISOString(),
+      groups: [],
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Injetamos o novo pote na lista
+    const updatedGroups = [...currentBlueprint.groups, group];
+    const updatedBlueprint = { ...currentBlueprint, groups: updatedGroups };
+
+    // Atualizamos a tela
+    set({ blueprint: updatedBlueprint });
+
+    // Salvamos no Firebase em segundo plano
+    try {
+      await blueprintService.syncGroups(updatedBlueprint.familyId, updatedGroups);
     } catch (error) {
       console.error("Falha ao salvar no banco:", error);
-      toast.error("Ocorreu um erro ao salvar na nuvem, mas o dado está salvo no seu dispositivo.");
+      toast.error("Erro ao sincronizar na nuvem.");
     }
   },
 
@@ -91,6 +112,30 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
       await blueprintService.syncGroups(currentState.blueprint.familyId, updatedGroups);
     } catch (error) {
       console.error("Falha ao adicionar subgrupo no banco:", error);
+    }
+  },
+
+  removeSubgroup: async (groupId, subgroupId) => {
+    const currentState = get();
+    if (!currentState.blueprint) return;
+
+    const updatedGroups = currentState.blueprint.groups.map((group) => {
+      if (group.id === groupId) {
+        // Filtra os subgrupos, removendo o que tem o ID correspondente
+        return {
+          ...group,
+          subgroups: group.subgroups.filter((sub) => sub.id !== subgroupId),
+        };
+      }
+      return group;
+    });
+
+    set({ blueprint: { ...currentState.blueprint, groups: updatedGroups } });
+
+    try {
+      await blueprintService.syncGroups(currentState.blueprint.familyId, updatedGroups);
+    } catch (error) {
+      console.error("Falha ao remover subgrupo no banco:", error);
     }
   },
 }));

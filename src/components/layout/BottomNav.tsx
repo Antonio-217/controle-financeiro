@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, Target, FolderPlus } from "lucide-react";
+import { Home, Plus, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CustomModal } from "@/components/shared/CustomModal";
@@ -68,7 +66,7 @@ export function BottomNav() {
                 isOpen={isCategoryModalOpen}
                 onClose={closeCategoryModal}
                 title="Nova categoria"
-                description="Defina a regra do seu Blueprint financeiro."
+                description="Defina as regras do seu controle financeiro."  
             >
                 <CategoryForm onSuccess={closeCategoryModal} onCancel={closeCategoryModal} />
             </CustomModal>

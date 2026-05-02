@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, X, Percent } from "lucide-react";
@@ -11,6 +12,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
+  const { user } = useAuth();
   const addGroup = useBlueprintStore((state) => state.addGroup);
 
   const [name, setName] = useState("");
@@ -40,17 +42,20 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
       return;
     }
 
-    const validSubcategories = subcategories.filter(sub => sub.name.trim() !== "").map(sub => ({ id: sub.id, name: sub.name }));;
+    // Filtra inputs vazios e mapeia no formato correto que a Store exige (Subgroup)
+    const validSubcategories = subcategories
+      .filter(sub => sub.name.trim() !== "")
+      .map(sub => ({ id: sub.id, name: sub.name.trim() }));
 
     const newGroup = {
       id: crypto.randomUUID(),
-      name,
+      name: name.trim(),
       targetPercentage: Number(percentage),
       color: "bg-emerald-500",
       subgroups: validSubcategories
     };
 
-    addGroup(newGroup);
+    addGroup(newGroup, user?.familyId || "");
     
     toast.success(`Pote "${name}" criado com sucesso!`);
     onSuccess();
@@ -60,23 +65,23 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
     <form id="category-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="text-xs text-gray-500 mb-1.5 block">Nome da categoria</label>
+          <label className="text-xs text-zinc-400 mb-1.5 block">Nome da categoria</label>
           <Input 
             placeholder="Ex: Liberdade financeira" 
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="bg-zinc-100 border-zinc-300 focus-visible:ring-emerald-500"
+            className="text-zinc-100 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600 focus-visible:ring-emerald-500"
           />
         </div>
         <div className="w-28">
-          <label className="text-xs text-gray-500 mb-1.5 block">Alvo (%)</label>
+          <label className="text-xs text-zinc-400 mb-1.5 block">Alvo (%)</label>
           <div className="relative">
             <Input 
               type="number" 
               placeholder="20" 
               value={percentage}
               onChange={(e) => setPercentage(e.target.value)}
-              className="bg-zinc-100 border-zinc-300 pr-8 focus-visible:ring-emerald-500"
+              className="text-zinc-100 bg-zinc-900/50 border-zinc-800 pr-8 placeholder:text-zinc-600 focus-visible:ring-emerald-500"
             />
             <Percent className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           </div>
@@ -85,31 +90,31 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs text-gray-500">Subcategorias (Opcional)</label>
+          <label className="text-xs text-zinc-400">Subcategorias (Opcional)</label>
           <button 
             type="button" 
             onClick={addSubcategory}
-            className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-500 transition-colors"
+            className="text-xs flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors"
           >
             <Plus className="h-3 w-3"/> Adicionar
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto pl-1 pr-1 pb-1 scrollbar-thin scrollbar-thumb-zinc-800">
+        <div className="flex flex-col gap-2 max-h-[170px] overflow-y-auto pl-1 pr-1 pb-0 scrollbar-thin scrollbar-thumb-zinc-800">
           {subcategories.map((sub, index) => (
             <div key={sub.id} className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
               <Input 
                 placeholder={`Ex: ${index === 0 ? 'Reserva de emergência' : 'Tesouro direto'}`}
                 value={sub.name}
                 onChange={(e) => updateSubcategory(sub.id, e.target.value)}
-                className="bg-zinc-100 border-zinc-300 text-sm text-zinc-900 focus-visible:ring-emerald-500"
+                className="text-zinc-100 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600 focus-visible:ring-emerald-500"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => removeSubcategory(sub.id)}
-                className="h-10 w-10 text-gray-500 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                className="h-10 w-10 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 transition-colors"
                 disabled={subcategories.length === 1}
               >
                 <X className="h-4 w-4" />
@@ -120,10 +125,19 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
       </div>
 
       <div className="mt-2 flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onCancel} className="text-gray-500 hover:text-zinc-600">
+        <Button 
+          type="button" 
+          variant="ghost" 
+          onClick={onCancel} 
+          className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+        >
           Cancelar
         </Button>
-        <Button type="submit" form="category-form" className="bg-emerald-600 hover:bg-emerald-500 text-white">
+        <Button 
+          type="submit" 
+          form="category-form" 
+          className="bg-emerald-600 hover:bg-emerald-500 text-white"
+        >
           Salvar
         </Button>
       </div>

@@ -72,13 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // --- Função Central de Criação de Arquitetura no Firestore ---
+  // Função para criar a estrutura inicial
   async function createInitialDatabaseStructure(uid: string, email: string, name: string, inputFamilyId?: string) {
     const userRef = doc(db, "users", uid);
     let finalFamilyId = inputFamilyId;
 
     if (inputFamilyId) {
-      // Usuário quer entrar numa família existente (Modo Casal)
+      // Usuário quer entrar numa família existente (Modo casal)
       const familyRef = doc(db, "families", inputFamilyId);
       const familySnap = await getDoc(familyRef);
       
@@ -98,37 +98,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: finalFamilyId,
         name: `Finanças de ${name.split(" ")[0]}`,
         members: [uid],
-        createdAt: new Date()
+        createdAt: new Date().toISOString()
       });
 
-      // Cria um Blueprint padrão flexível
       const newBlueprintRef = doc(collection(db, "blueprints"));
       await setDoc(newBlueprintRef, {
         id: newBlueprintRef.id,
         familyId: finalFamilyId,
         monthYear: "Padrão",
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
         groups: [
           {
             id: crypto.randomUUID(),
-            name: "Gastos Essenciais",
+            name: "Gastos essenciais",
             targetPercentage: 50,
             color: "bg-blue-500",
             subgroups: [{ id: crypto.randomUUID(), name: "Moradia" }]
           },
           {
             id: crypto.randomUUID(),
-            name: "Estilo de Vida",
+            name: "Estilo de vida",
             targetPercentage: 30,
             color: "bg-purple-500",
             subgroups: [{ id: crypto.randomUUID(), name: "Lazer" }]
           },
           {
             id: crypto.randomUUID(),
-            name: "Liberdade Financeira",
+            name: "Liberdade financeira",
             targetPercentage: 20,
             color: "bg-emerald-500",
-            subgroups: [{ id: crypto.randomUUID(), name: "Reserva de Emergência" }]
+            subgroups: [{ id: crypto.randomUUID(), name: "Reserva de emergência" }]
           }
         ]
       });
@@ -139,9 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: uid,
       email: email,
       name: name,
-      photoURL: null,
       familyId: finalFamilyId,
-      createdAt: new Date()
+      createdAt: new Date().toISOString()
     });
   }
 
