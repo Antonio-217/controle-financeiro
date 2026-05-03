@@ -102,7 +102,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         members: [uid],
         createdAt: new Date().toISOString()
       });
+    }
 
+    await setDoc(userRef, {
+      id: uid,
+      email: email,
+      name: name,
+      familyId: finalFamilyId,
+      createdAt: new Date().toISOString()
+    });
+
+    // Só cria o Blueprint se for uma família nova (se ele não estiver entrando em uma existente)
+    if (!inputFamilyId) {
       const newBlueprintRef = doc(collection(db, "blueprints"));
       await setDoc(newBlueprintRef, {
         id: newBlueprintRef.id,
@@ -134,15 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]
       });
     }
-
-    // Salva o usuário
-    await setDoc(userRef, {
-      id: uid,
-      email: email,
-      name: name,
-      familyId: finalFamilyId,
-      createdAt: new Date().toISOString()
-    });
   }
 
   // Login/Cadastro com Email
