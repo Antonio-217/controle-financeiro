@@ -5,8 +5,11 @@ import { transactionService } from '@/services/transactionService';
 interface TransactionState {
   transactions: Transaction[];
   isLoading: boolean;
+  currentMonth: number;
+  currentYear: number;
+  setCurrentDate: (month: number, year: number) => void;
   
-  fetchTransactions: (familyId: string) => Promise<void>;
+  fetchTransactions: (familyId: string, month: number, year: number) => Promise<void>;
   addTransaction: (transaction: Transaction) => Promise<void>;
   updateTransaction: (id: string, field: string, value: string | number) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -15,11 +18,16 @@ interface TransactionState {
 export const useTransactionStore = create<TransactionState>((set) => ({
   transactions: [],
   isLoading: false,
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
 
-  fetchTransactions: async (familyId) => {
+  // Função para atualizar a data quando o usuário clicar nas setas
+  setCurrentDate: (month, year) => set({ currentMonth: month, currentYear: year }),
+
+  fetchTransactions: async (familyId, month, year) => {
     set({ isLoading: true });
     try {
-      const data = await transactionService.getTransactions(familyId);
+      const data = await transactionService.getTransactionsByMonth(familyId, month, year);
       set({ transactions: data });
     } catch (error) {
       console.error("Erro ao buscar transações:", error);

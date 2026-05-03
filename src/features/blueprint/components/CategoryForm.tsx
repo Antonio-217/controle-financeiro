@@ -11,12 +11,23 @@ interface CategoryFormProps {
   onCancel: () => void;
 }
 
+// Lista de cores disponíveis
+const COLOR_OPTIONS = [
+  "bg-emerald-500",
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-rose-500",
+  "bg-amber-500",
+  "bg-cyan-500"
+];
+
 export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
   const { user } = useAuth();
   const addGroup = useBlueprintStore((state) => state.addGroup);
 
   const [name, setName] = useState("");
   const [percentage, setPercentage] = useState("");
+  const [color, setColor] = useState(COLOR_OPTIONS[0]);
   const [subcategories, setSubcategories] = useState([{ id: crypto.randomUUID(), name: "" }]);
 
   const addSubcategory = () => {
@@ -51,7 +62,7 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
       id: crypto.randomUUID(),
       name: name.trim(),
       targetPercentage: Number(percentage),
-      color: "bg-emerald-500",
+      color: color,
       subgroups: validSubcategories
     };
 
@@ -63,9 +74,10 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
 
   return (
     <form id="category-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+
       <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="text-xs text-zinc-400 mb-1.5 block">Nome da categoria</label>
+        <div className="flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
+          <label className="text-sm text-zinc-400 mb-1.5 block">Nome da categoria</label>
           <Input 
             placeholder="Ex: Liberdade financeira" 
             value={name}
@@ -73,9 +85,10 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
             className="text-zinc-100 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600 focus-visible:ring-emerald-500"
           />
         </div>
+
         <div className="w-28">
-          <label className="text-xs text-zinc-400 mb-1.5 block">Alvo (%)</label>
-          <div className="relative">
+          <label className="text-sm text-zinc-400 mb-1.5 block">Alvo (%)</label>
+          <div className="relative animate-in fade-in slide-in-from-left-2 duration-300">
             <Input 
               type="number" 
               placeholder="20" 
@@ -88,15 +101,35 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
         </div>
       </div>
 
+      {/* Seleção de Cor */}
+      <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-left-2 duration-300">
+        <label className="text-sm text-zinc-400 block">Cor de identificação</label>
+        <div className="flex items-center gap-3">
+          {COLOR_OPTIONS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setColor(c)}
+              className={`h-8 w-8 rounded-full transition-all duration-200 ${c} ${
+                color === c 
+                  ? "ring-2 ring-zinc-100 ring-offset-2 ring-offset-zinc-950 scale-110" 
+                  : "opacity-40 hover:opacity-100 hover:scale-105"
+              }`}
+              aria-label={`Selecionar cor ${c}`}
+            />
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <label className="text-xs text-zinc-400">Subcategorias (Opcional)</label>
+        <div className="flex items-center justify-between animate-in fade-in slide-in-from-left-2 duration-300">
+          <label className="text-sm text-zinc-400">Subcategorias (Opcional)</label>
           <button 
             type="button" 
             onClick={addSubcategory}
-            className="text-xs flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors"
+            className="text-sm flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors"
           >
-            <Plus className="h-3 w-3"/> Adicionar
+            <Plus className="h-4 w-4"/> Adicionar
           </button>
         </div>
 
@@ -104,7 +137,7 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
           {subcategories.map((sub, index) => (
             <div key={sub.id} className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
               <Input 
-                placeholder={`Ex: ${index === 0 ? 'Reserva de emergência' : 'Tesouro direto'}`}
+                placeholder={`Ex: ${index === 0 ? 'Reserva de emergência' : 'Poupança'}`}
                 value={sub.name}
                 onChange={(e) => updateSubcategory(sub.id, e.target.value)}
                 className="text-zinc-100 bg-zinc-900/50 border-zinc-800 placeholder:text-zinc-600 focus-visible:ring-emerald-500"
@@ -114,7 +147,7 @@ export function CategoryForm({ onSuccess, onCancel }: CategoryFormProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => removeSubcategory(sub.id)}
-                className="h-10 w-10 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 transition-colors"
+                className="h-10 w-10 text-zinc-500 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
                 disabled={subcategories.length === 1}
               >
                 <X className="h-4 w-4" />

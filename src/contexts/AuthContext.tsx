@@ -19,6 +19,7 @@ interface AppUser {
   email: string | null;
   name: string;
   photoURL: string | null;
+  avatarUrl?: string | null;
   familyId: string | null;
 }
 
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: firebaseUser.email,
           name: userData.name || firebaseUser.displayName || "Usuário",
           photoURL: firebaseUser.photoURL,
+          avatarUrl: userData.avatarUrl || null,
           familyId: userData.familyId || null
         });
       }

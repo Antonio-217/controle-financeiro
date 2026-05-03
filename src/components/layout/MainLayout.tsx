@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Settings, LogOut, Loader2 } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Avatar,
@@ -46,7 +46,7 @@ export function MainLayout() {
           {/* Lado Esquerdo: Avatar e Saudação */}
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border border-zinc-800 shadow-sm">
-              <AvatarImage src={user?.photoURL || ""} alt={user?.name} />
+              <AvatarImage src={user?.avatarUrl || user?.photoURL || ""} alt={user?.name} />
               <AvatarFallback className="bg-zinc-800 text-emerald-500 font-semibold">
                 {initials}
               </AvatarFallback>
@@ -64,17 +64,8 @@ export function MainLayout() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/settings")}
-              className="text-zinc-400 hover:text-emerald-500 p-1.5 hover:bg-emerald-500/10 rounded transition-colors"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
               onClick={handleLogout}
-              className="text-zinc-400 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
+              className="text-zinc-300 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="h-5 w-5" />
             </Button>

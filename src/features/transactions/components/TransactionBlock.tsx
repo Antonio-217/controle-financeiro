@@ -4,7 +4,7 @@ import { formatCurrencyInput, parseCurrencyToNumber } from "@/utils/currency";
 
 interface Transaction {
   id: string;
-  parentId: string;
+  parentId: string | null;
   description: string;
   amount: number;
 }
@@ -35,8 +35,6 @@ export function TransactionBlock({
   const [newDesc, setNewDesc] = useState("");
   const [newAmount, setNewAmount] = useState("");
 
-  console.log(parent)
-
   const sectionTx = transactions.filter((t) => t.parentId === parent.id);
   const total = sectionTx.reduce((acc, t) => acc + (t.amount || 0), 0);
 
@@ -55,7 +53,7 @@ export function TransactionBlock({
       {type === "subgroup" && (
         <>
           <div className="flex items-center justify-between px-4 py-3 bg-zinc-900/10">
-            <span className="text-sm font-medium text-zinc-300 uppercase tracking-wider">
+            <span className="text-sm font-medium text-zinc-300">
               {parent.name}
             </span>
 
@@ -68,7 +66,7 @@ export function TransactionBlock({
               {onDeleteSubgroup && (
                 <button
                   onClick={onDeleteSubgroup}
-                  className="text-zinc-500 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
+                  className="text-zinc-400 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
                   title="Remover Subgrupo"
                 >
                   <Trash2 className="h-4 w-4" />
